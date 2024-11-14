@@ -20,8 +20,8 @@ from sklearn.ensemble import RandomForestClassifier
 if __name__ == "__main__":
     parser = argparse.ArgumentParser("Evaluation with weighted k-NN on ImageNet")
     parser.add_argument("--supervised_model", default='RF', type= str)
-    parser.add_argument("--supervised_training_dataset", default="/Users/pegah/Desktop/KOM/Datasets/preprocessed_csv/allattack_mondaybenign.csv", type=str)
-    parser.add_argument("--model_chkpt_path", default="/Users/pegah/Desktop/KOM/GitHub/ssl-ids/checkpoints/scarf1_embedding_dim=45_corruption_rate=0.6_lr=0.001_batch_size=128_epochs=40.pth", type=str)
+    parser.add_argument("--supervised_training_dataset", default="datasets/CICIDS-2017/dataset.csv", type=str)
+    parser.add_argument("--model_chkpt_path", default="checkpoints/scarf1_embedding_dim=45_corruption_rate=0.6_lr=0.001_batch_size=128_epochs=40.pth", type=str)
     parser.add_argument(
         "--batch_size", default=512, type=int, help="Per-GPU batch-size"
     )
@@ -53,7 +53,7 @@ if __name__ == "__main__":
     train_embeddings, train_labels = get_embeddings_labels(
         model, train_loader, device, to_numpy=False, normalize=True
     )
-    unknown_df = load_pandas_df("/Users/pegah/Desktop/KOM/GitHub/ssl-ids/1.csv")
+    unknown_df = load_pandas_df("datasets/CICIDS-2017/dataset.csv")
     x_unknown, y_unknown = unknown_df.iloc[:, :-1], unknown_df["Label"]
     unknown_ds = ExampleDataset(  # onlin normal flows
         x_unknown.to_numpy(),

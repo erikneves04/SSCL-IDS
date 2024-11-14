@@ -24,7 +24,10 @@ def OOD_classifier(train_features, test_features, k, T, cn, args):
     batch_size = 1000
     cos_sim_lst = []
     num_test_feat = test_features.size(0)
+    print (num_test_feat)
+    exit (1)
     for strat_idx in range(0, num_test_feat, batch_size):
+        print(f"OOD_classifiers iteration {strat_idx}.")
         end_idx = min((strat_idx + batch_size), num_test_feat)
         curr_test_features = test_features[strat_idx:end_idx]
         curr_bs = curr_test_features.size(0)
@@ -37,6 +40,7 @@ def OOD_classifier(train_features, test_features, k, T, cn, args):
         cos_sim = cos_sim.view(curr_bs, cn).mean(dim=1)
         cos_sim_lst.append(cos_sim.cpu())
     cos_sim = torch.cat(cos_sim_lst, dim=0)
+    print(f"--------------------------------------")
     return cos_sim
 
 
@@ -57,6 +61,7 @@ def knn_classifier(
     imgs_per_chunk = num_test_images // num_chunks
     retrieval_one_hot = torch.zeros(k, num_classes).to(device)
     for idx in range(0, num_test_images, imgs_per_chunk):
+        print(f"knn_classifier iteration {idx}.")
         # get the features for test images
         features = test_features[idx : min((idx + imgs_per_chunk), num_test_images), :]
         targets = test_labels[idx : min((idx + imgs_per_chunk), num_test_images)]
@@ -89,6 +94,7 @@ def knn_classifier(
             top5 + correct.narrow(1, 0, min(5, k)).sum().item()
         )  # top5 does not make sense if k < 5
         total += targets.size(0)
+    print(f"-------------------------------")
     top1 = top1 * 100.0 / total
     top5 = top5 * 100.0 / total
     return top1, top5
@@ -108,8 +114,8 @@ if __name__ == "__main__":
     parser.add_argument(
         "--run_knn", default=False, type=bool, help="Whether to run kNN"
     )
-    parser.add_argument("--model_chkpt_path", default="/Users/pegah/Desktop/KOM/GitHub/ssl-ids/checkpoints/scarf1_embedding_dim=45_corruption_rate=0.6_lr=0.001_batch_size=128_epochs=40.pth", type=str)
-    parser.add_argument("--main_dir", default="/Users/pegah/Desktop/KOM/GitHub/ssl-ids/")
+    parser.add_argument("--model_chkpt_path", default="checkpoints/scarf1_embedding_dim=45_corruption_rate=0.6_lr=0.001_batch_size=128_epochs=40.pth", type=str)
+    parser.add_argument("--main_dir", default="/home/erik/Documentos/SSCL-IDS/")
 
     args = parser.parse_args()
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -135,7 +141,7 @@ if __name__ == "__main__":
         train_normal_y.to_numpy(),
         columns=train_normal_x.columns,
     )
-    unknown_df = load_pandas_df(args.main_dir+"1.csv")
+    unknown_df = load_pandas_df("datasets/CICIDS-2017/dataset.csv")
     normal_unknown_df = unknown_df[unknown_df['Label']==0]
     attack_unknown_df = unknown_df[unknown_df['Label']==1]
 
