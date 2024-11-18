@@ -18,6 +18,9 @@ from utils import *
 from models import SCARF
 from sklearn.metrics import roc_auc_score
 
+def save_model(model, file_path):
+    torch.save(model.state_dict(), file_path)
+    print(f"Model saved at {file_path}")
 
 @torch.no_grad()
 def OOD_classifier(train_features, test_features, k, T, cn, args):
@@ -216,7 +219,7 @@ if __name__ == "__main__":
         # Verifica se é um tensor do PyTorch e converte para numpy, se necessário
         if isinstance(embeddings, torch.Tensor):
             embeddings = embeddings.numpy()
-        np.savetxt(f'saves/self/{filename}', embeddings, delimiter=",")
+        np.savetxt(filename, embeddings, delimiter=",")
         print(f"Saved: {filename}")
 
     print("Train Embedding Dim", torch.tensor(train_embeddings).size() if type(train_embeddings) is not torch.Tensor else train_embeddings.size())
@@ -230,6 +233,7 @@ if __name__ == "__main__":
     save_embeddings_to_csv(test_attack_embeddings, "test_attack_embeddings.csv")
     save_embeddings_to_csv(attack_unknown_embeddings, "attack_unknown_embeddings.csv")
     save_embeddings_to_csv(normal_unknown_embeddings, "normal_unknown_embeddings.csv")
+    save_model(model, "saves/self/final_model.plk")
 
     # should be modified
     
