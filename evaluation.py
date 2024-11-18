@@ -1,5 +1,6 @@
 import sys
 import argparse
+from pathlib import Path
 
 import torch
 from torch import Tensor
@@ -211,11 +212,24 @@ if __name__ == "__main__":
         model, unknown_normal_loader, device, to_numpy=False, normalize=True
     )
 
+    def save_embeddings_to_csv(embeddings, filename):
+        # Verifica se é um tensor do PyTorch e converte para numpy, se necessário
+        if isinstance(embeddings, torch.Tensor):
+            embeddings = embeddings.numpy()
+        np.savetxt(f'saves/self/{filename}', embeddings, delimiter=",")
+        print(f"Saved: {filename}")
+
     print("Train Embedding Dim", torch.tensor(train_embeddings).size() if type(train_embeddings) is not torch.Tensor else train_embeddings.size())
     print("Test Normal Embedding Dim", torch.tensor(test_normal_embeddings).size() if type(test_normal_embeddings) is not torch.Tensor else test_normal_embeddings.size())
     print("Test Attack Embedding Dim", torch.tensor(test_attack_embeddings).size() if type(test_attack_embeddings) is not torch.Tensor else test_attack_embeddings.size())
     print("Attack Unknown Embedding Dim", torch.tensor(attack_unknown_embeddings).size() if type(attack_unknown_embeddings) is not torch.Tensor else attack_unknown_embeddings.size())
     print("Normal Unknown Embedding Dim", torch.tensor(normal_unknown_embeddings).size() if type(normal_unknown_embeddings) is not torch.Tensor else normal_unknown_embeddings.size())
+
+    save_embeddings_to_csv(train_embeddings, "train_embeddings.csv")
+    save_embeddings_to_csv(test_normal_embeddings, "test_normal_embeddings.csv")
+    save_embeddings_to_csv(test_attack_embeddings, "test_attack_embeddings.csv")
+    save_embeddings_to_csv(attack_unknown_embeddings, "attack_unknown_embeddings.csv")
+    save_embeddings_to_csv(normal_unknown_embeddings, "normal_unknown_embeddings.csv")
 
     # should be modified
     
@@ -242,8 +256,18 @@ if __name__ == "__main__":
             train_embeddings, test_attack_embeddings, -1, 0.04, 1, args
         )
 
+        output_dir = Path("/home/erik/Documentos/SSCL-IDS/")
+        output_dir.mkdir(exist_ok=True)
+
+        torch.save(scores_in, "saves/self/scores_in.pt")
+        torch.save(scores_out, "saves/self/scores_out.pt")
+
         labels = torch.cat((torch.ones(scores_in.size(0)), torch.zeros(scores_out.size(0))))
         scores = torch.cat((scores_in, scores_out))
+
+        torch.save(labels, "saves/self/labels.pt")
+        torch.save(scores, "saves/self/scores.pt")
+
         auroc = roc_auc_score(labels.numpy(), scores.cpu().numpy())
         print(f"AUROC: {auroc}")
     

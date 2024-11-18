@@ -1,6 +1,5 @@
 import sys
 import argparse
-
 import torch
 from torch import Tensor
 from datasets import get_dataset, ExampleDataset
@@ -16,10 +15,11 @@ from sklearn.metrics import (
     confusion_matrix,
 )
 from sklearn.ensemble import RandomForestClassifier
+import joblib  # Para salvar os modelos scikit-learn
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser("Evaluation with weighted k-NN on ImageNet")
-    parser.add_argument("--supervised_model", default='RF', type= str)
+    parser.add_argument("--supervised_model", default='RF', type=str)
     parser.add_argument("--supervised_training_dataset", default="datasets/CICIDS-2017/dataset.csv", type=str)
     parser.add_argument("--model_chkpt_path", default="checkpoints/scarf1_embedding_dim=45_corruption_rate=0.6_lr=0.001_batch_size=128_epochs=40.pth", type=str)
     parser.add_argument(
@@ -66,26 +66,44 @@ if __name__ == "__main__":
     unknown_embeddings, unknown_labels = get_embeddings_labels(
         model, unknown_loader, device, to_numpy=False, normalize=True
     )
-    if args.supervised_model =='LR':
+
+    x_train = x_train.replace([np.inf, -np.inf], np.nan)  # Substituir inf por NaN
+    x_train = x_train.fillna(0)  # Substituir NaN por 0
+
+    x_unknown = x_unknown.replace([np.inf, -np.inf], np.nan)
+    x_unknown = x_unknown.fillna(0)
+
+
+    if args.supervised_model == 'LR':
         print("###########   LR on the raw data #############")
         clf = LogisticRegression()
         clf.fit(x_train, y_train)
         prediction = clf.predict(x_unknown)
-        print('classification report on raw set:',classification_report(y_unknown, prediction))
+        print('classification report on raw set:', classification_report(y_unknown, prediction))
 
         print('############ LR on Embedding data ###############')
         clf.fit(train_embeddings, train_labels)
         prediction_emb = clf.predict(unknown_embeddings)
-        print('classification report on embedded set:',classification_report(unknown_labels, prediction_emb))
+        print('classification report on embedded set:', classification_report(unknown_labels, prediction_emb))
 
-    if args.supervised_model =='RF':
+        # Salvar o modelo LR
+        lr_model_path = "saves/supervised/lr_model.pkl"
+        joblib.dump(clf, lr_model_path)
+        print(f"Logistic Regression model saved at {lr_model_path}")
+
+    if args.supervised_model == 'RF':
         print("###########   RF on the raw data #############")
         clf = RandomForestClassifier(n_estimators=100)
         clf.fit(x_train, y_train)
         prediction = clf.predict(x_unknown)
-        print('classification report on raw set:',classification_report(y_unknown, prediction))
+        print('classification report on raw set:', classification_report(y_unknown, prediction))
 
         print('############ RF on Embedding data ###############')
         clf.fit(train_embeddings, train_labels)
         prediction_emb = clf.predict(unknown_embeddings)
-        print('classification report on embedded set:',classification_report(unknown_labels, prediction_emb))
+        print('classification report on embedded set:', classification_report(unknown_labels, prediction_emb))
+
+        # Salvar o modelo RF
+        rf_model_path = "saves/supervised/rf_model.pkl"
+        joblib.dump(clf, rf_model_path)
+        print(f"Random Forest model saved at {rf_model_path}")

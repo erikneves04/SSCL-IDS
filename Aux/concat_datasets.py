@@ -1,6 +1,7 @@
 import pandas as pd
 
 PATHS = [
+    # CICIDS-2017
     'datasets/CICIDS-2017/Friday-WorkingHours-Afternoon-DDos.pcap_ISCX.csv',
     'datasets/CICIDS-2017/Friday-WorkingHours-Afternoon-PortScan.pcap_ISCX.csv',
     'datasets/CICIDS-2017/Friday-WorkingHours-Morning.pcap_ISCX.csv',
@@ -9,6 +10,20 @@ PATHS = [
     'datasets/CICIDS-2017/Thursday-WorkingHours-Morning-WebAttacks.pcap_ISCX.csv',
     'datasets/CICIDS-2017/Tuesday-WorkingHours.pcap_ISCX.csv',
     'datasets/CICIDS-2017/Wednesday-workingHours.pcap_ISCX.csv',
+
+    # UNSW-NB
+    'datasets/UNSW-NB/UNSW-NB15_1.csv',
+    'datasets/UNSW-NB/UNSW-NB15_2.csv',
+    'datasets/UNSW-NB/UNSW-NB15_3.csv',
+    'datasets/UNSW-NB/UNSW-NB15_4.csv',
+
+    # 
+
+
+    #
+
+
+    #
 ]
 
 OUTPUT = 'datasets/CICIDS-2017/dataset.csv'
