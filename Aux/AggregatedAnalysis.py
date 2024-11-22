@@ -1,108 +1,71 @@
+import pandas as pd
 import joblib
-import pandas as pd
-from sklearn.metrics import classification_report, confusion_matrix
+from sklearn.metrics import classification_report
 import matplotlib.pyplot as plt
-import numpy as np
-from torch.utils.data import DataLoader
-import torch
 
-from Scarf_modified_diff_pospairs import SCARF
-from utils import get_embeddings_labels
+# Passo 1: Carregar o Dataset
+df = pd.read_csv('datasets/CICIDS-2017/dataset.csv')
 
-import torch
-from torch.utils.data import Dataset, DataLoader
-import pandas as pd
+# Supondo que as colunas de características sejam 'feature1', 'feature2', ..., e a coluna 'Label' seja o alvo
+X = df.drop(columns=['Label']).values  # Características
+y = df['Label'].values  # Etiquetas
 
-class ExampleDataset(Dataset):
-    def __init__(self, features, labels):
-        """
-        Args:
-            features (array-like): As características de entrada.
-            labels (array-like): As etiquetas de saída.
-        """
-        self.features = features
-        self.labels = labels
+# Passo 2: Carregar os Modelos Salvos
+# Carregar o modelo supervisionado (Random Forest)
+supervised_model_path = 'saves/supervised/rf_model.pkl'
+clf = joblib.load(supervised_model_path)
 
-    def __len__(self):
-        return len(self.features)
+# Carregar o modelo "Self" (exemplo com KMeans)
+self_model_path = 'saves/self/final_model.plk'  # Supondo que o modelo "Self" também tenha sido salvo
+self_model = joblib.load(self_model_path)
 
-    def __getitem__(self, idx):
-        sample = {'feature': self.features[idx], 'label': self.labels[idx]}
-        return sample
+# Passo 3: Avaliar o Modelo Supervisionado
+y_pred_supervised = clf.predict(X)
 
+# Relatório de classificação para o modelo supervisionado
+report_supervised = classification_report(y, y_pred_supervised, output_dict=True)
+print("Classification Report for Supervised Model:")
+print(report_supervised)
 
-def load_model(model_path):
-    """Carregar o modelo a partir do caminho especificado."""
-    return joblib.load(model_path)
+# Passo 4: Avaliar o Modelo "Self"
+y_pred_self = self_model.predict(X)
 
-def load_data(dataset_path):
-    """Carregar dados do dataset CSV especificado."""
-    df = pd.read_csv(dataset_path)
-    # Excluir colunas irrelevantes (exemplo: ID, Timestamp, etc.), mantendo as colunas de features
-    df = df.drop(columns=['Timestamp', 'ID'])  # Ajuste conforme necessário
-    x_data = df.iloc[:, :-1]  # Colunas de Features
-    y_data = df["Label"]  # Coluna Target
-    return x_data, y_data
+# Relatório de classificação para o modelo "Self"
+report_self = classification_report(y, y_pred_self, output_dict=True)
+print("Classification Report for Self Model:")
+print(report_self)
 
-def plot_confusion_matrix(y_true, y_pred, title="Confusion Matrix"):
-    """Plotar a matriz de confusão."""
-    cm = confusion_matrix(y_true, y_pred)
-    fig, ax = plt.subplots(figsize=(5, 5))
-    ax.imshow(cm, interpolation="nearest", cmap=plt.cm.Blues)
-    ax.set_title(title)
-    ax.set_xlabel('Predicted label')
-    ax.set_ylabel('True label')
-    tick_marks = np.arange(len(set(y_true)))
-    ax.set_xticks(tick_marks)
-    ax.set_yticks(tick_marks)
-    ax.set_xticklabels(set(y_true))
-    ax.set_yticklabels(set(y_true))
-    plt.colorbar(ax.imshow(cm, interpolation="nearest", cmap=plt.cm.Blues))
-    plt.tight_layout()
-    plt.show()
+# Passo 5: Comparação entre os Modelos
+# Extraindo as métricas de precisão de cada relatório
+accuracy_supervised = report_supervised['accuracy']
+accuracy_self = report_self['accuracy']
 
-if __name__ == "__main__":
-    # Carregar dados de teste
-    test_data_path = "datasets/CICIDS-2017/dataset.csv"  # Altere conforme necessário
-    x_test, y_test = load_data(test_data_path)
+precision_supervised = report_supervised['macro avg']['precision']
+precision_self = report_self['macro avg']['precision']
 
-    # Carregar os modelos salvos
-    self_model_path = 'saves/supervised/scarf_model.pkl'  # Ajuste o caminho conforme necessário
-    supervised_model_path = 'saves/supervised/rf_model.pkl'  # Ajuste o caminho conforme necessário
+recall_supervised = report_supervised['macro avg']['recall']
+recall_self = report_self['macro avg']['recall']
 
-    # Carregar o modelo self (SCARF)
-    ckpt = torch.load('checkpoints/scarf_checkpoint.pth')  # Caminho do checkpoint do modelo SCARF
-    train_args = ckpt["args"]
-    model = SCARF(
-        input_dim=train_args.input_dim,
-        emb_dim=train_args.embedding_dim,
-        corruption_rate=train_args.corruption_rate,
-    )
-    model.load_state_dict(ckpt["model_state_dict"])
-    model.eval()
+f1_score_supervised = report_supervised['macro avg']['f1-score']
+f1_score_self = report_self['macro avg']['f1-score']
 
-    # Obter embeddings de teste (model SCARF)
-    test_ds = ExampleDataset(x_test.to_numpy(), y_test.to_numpy(), columns=x_test.columns)
-    test_loader = DataLoader(test_ds, batch_size=512, shuffle=False, drop_last=False)
-    test_embeddings, _ = get_embeddings_labels(model, test_loader, 'cpu', to_numpy=False, normalize=True)
+# Exibindo as comparações de precisão, recall e f1-score
+metrics = {
+    'Metric': ['Accuracy', 'Precision', 'Recall', 'F1-Score'],
+    'Supervised': [accuracy_supervised, precision_supervised, recall_supervised, f1_score_supervised],
+    'Self': [accuracy_self, precision_self, recall_self, f1_score_self]
+}
 
-    # Carregar o modelo supervisionado
-    rf_model = load_model(supervised_model_path)
+comparison_df = pd.DataFrame(metrics)
+print("\nComparison between Supervised and Self Models:")
+print(comparison_df)
 
-    # Previsões para o modelo SCARF (self)
-    self_predictions = rf_model.predict(test_embeddings)
+# Passo 6: Plotando as Comparações
+fig, ax = plt.subplots(figsize=(8, 6))
+comparison_df.set_index('Metric').plot(kind='bar', ax=ax, color=['blue', 'orange'])
 
-    # Previsões para o modelo supervisionado (RandomForest ou outro)
-    supervised_model = load_model(supervised_model_path)
-    supervised_predictions = supervised_model.predict(x_test)
-
-    # Relatórios de classificação para o modelo self e supervised
-    print("### Classification Report - Self Model (SCARF embeddings) ###")
-    print(classification_report(y_test, self_predictions))
-
-    print("### Classification Report - Supervised Model (Raw Data) ###")
-    print(classification_report(y_test, supervised_predictions))
-
-    # Plotar as matrizes de confusão
-    plot_confusion_matrix(y_test, self_predictions, title="Confusion Matrix - Self Model (SCARF)")
-    plot_confusion_matrix(y_test, supervised_predictions, title="Confusion Matrix - Supervised Model")
+ax.set_title('Comparison of Supervised and Self Models')
+ax.set_ylabel('Score')
+ax.set_xticklabels(comparison_df['Metric'], rotation=0)
+plt.tight_layout()
+plt.show()
