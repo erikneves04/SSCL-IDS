@@ -1,3 +1,9 @@
 
 /__pycache__
 /datasets
+tmp_folder/iot23-mirai-7-1.csv
+tmp_folder/iot23-mirai-7-1-processed_training_normalflows.csv
+tmp_folder/iot23-mirai-7-1-processed.csv
+iot23-mirai-7-1.csv
+iot23-mirai-7-1-processed.csv
+Dataset/iot23-mirai-7-1-processed.csv
