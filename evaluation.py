@@ -72,7 +72,7 @@ def auroc_calculations(train_embeddings, test_normal_embeddings, test_attack_emb
 
 if __name__ == "__main__":
     main_dir = os.path.dirname(os.path.abspath(__file__))
-    test_dataset_dir = os.path.join(main_dir, 'Dataset/')
+    #test_dataset_dir = os.path.join(main_dir, 'Dataset/')
     chk_dir = os.path.join(main_dir, "checkpoints/")
 
     parser = argparse.ArgumentParser("Evaluation of SSCL-IDS")
@@ -122,7 +122,7 @@ if __name__ == "__main__":
 
     # Process test dataset
     test_dataset_name = args.test_dataset_name
-    list_of_datasets = [os.path.join(test_dataset_dir, test_dataset_name)]
+    list_of_datasets = [test_dataset_name]
     for dataset_unknown_name in list_of_datasets:
         print(f'Test dataset: {dataset_unknown_name}')
         unknown_df = load_pandas_df(dataset_unknown_name)
